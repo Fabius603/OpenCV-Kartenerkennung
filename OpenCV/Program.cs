@@ -20,30 +20,32 @@ namespace OpenCV
             public Mat IMG;
         }
 
+        struct QueryValues
+        {
+            public Rect ROI;
+        }
+
 
         static void Main(string[] args)
         {
+            bool repeat = true;
             TrainerValues TV = TrainerLaden();
-            while(true)
+            QueryValues QV = QueryLaden();
+            while(repeat == true)
             {
-                Vergleichen(TV.KP_TRAIN, TV.DES_TRAIN, TV.IMG);
-                
+                repeat = Vergleichen(TV.KP_TRAIN, TV.DES_TRAIN, TV.IMG, QV.ROI);
             }
         }
 
-        static void Vergleichen(KeyPoint[] kp_train, Mat des_train, Mat trainImage)
+        static bool Vergleichen(KeyPoint[] kp_train, Mat des_train, Mat trainImage, Rect ROI)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            // Variablen Festlegung
-            Rect roi = new Rect(1360, 100, 240, 660); // Position des Suchbereichs (x, y, width, height)
-
-            // Bilder werden aus den beiden Ordnern geladen (die jeweils ersten Dateien im Ordner)
             string queryImagePath = $"{DIRECTORY}queryImage/{new System.IO.DirectoryInfo($"{DIRECTORY}queryImage").GetFiles().First().Name}";
 
-
-            using (Mat queryImage = new Mat(queryImagePath, ImreadModes.Grayscale).SubMat(roi))
+            // Bilder werden aus den beiden Ordnern geladen (die jeweils ersten Dateien im Ordner)
+            using (Mat queryImage = new Mat(queryImagePath, ImreadModes.Grayscale).SubMat(ROI))
 
 
             // keyPoints und destination wird miut sift berechnet
@@ -60,7 +62,7 @@ namespace OpenCV
                     if (des_train.Rows == 0 || des_query.Rows == 0)
                     {
                         Console.WriteLine("Keine Matches gefunden");
-                        return;
+                        return false;
                     }
                     DMatch[][] matches = matcher.KnnMatch(des_train, des_query, 2);
 
@@ -93,7 +95,7 @@ namespace OpenCV
                         stopwatch.Stop();
                         string time = stopwatch.Elapsed.ToString().Substring(7, 6);
 
-                        double[,] realPosition = RealPosition(roi, destination);
+                        double[,] realPosition = RealPosition(ROI, destination);
 
                         // Konsole gibt werte aus
                         // ---> nicht notwendig
@@ -109,14 +111,27 @@ namespace OpenCV
 
                         string eingabe = Console.ReadLine();
                         Console.Clear();
-                        return;
+                        if (eingabe == "q")
+                        {
+                            return false;
+                        }
+                        return true;
                     }
                     else
                     {
                         Console.WriteLine($"Nicht genügend Matches - {goodMatches.Length}/{MIN_MATCH_COUNT}");
+                        return false;
                     }
                 }
             }
+        }
+
+        static QueryValues QueryLaden()
+        {
+            QueryValues QV = new QueryValues();
+            // Position des Suchbereichs (x, y, width, height)
+            QV.ROI = new Rect(1360, 100, 240, 660);
+            return QV;
         }
 
         static TrainerValues TrainerLaden()
