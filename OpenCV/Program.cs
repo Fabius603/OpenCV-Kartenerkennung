@@ -39,16 +39,15 @@ namespace OpenCV
 
         static bool Vergleichen(KeyPoint[] kp_train, Mat des_train, Mat trainImage, Rect ROI)
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+            Timer.Start(out Stopwatch stopwatch);
 
             string queryImagePath = $"{DIRECTORY}queryImage/{new System.IO.DirectoryInfo($"{DIRECTORY}queryImage").GetFiles().First().Name}";
+
 
             // Bilder werden aus den beiden Ordnern geladen (die jeweils ersten Dateien im Ordner)
             using (Mat queryImage = new Mat(queryImagePath, ImreadModes.Grayscale).SubMat(ROI))
 
-
-            // keyPoints und destination wird miut sift berechnet
+            // keyPoints und destination wird mit sift berechnet
             using (SIFT sift = SIFT.Create())
             {
                 KeyPoint[] kp_query;
@@ -86,16 +85,15 @@ namespace OpenCV
                         // ---> nicht notwendig
                         IEnumerable<OpenCvSharp.KeyPoint> keyPointEnumerable = ConvertToEnumerable(destination);
                         Cv2.DrawKeypoints(queryImage, keyPointEnumerable, queryImage, Scalar.Lime, DrawMatchesFlags.Default);
-                        drawRectangle(destination, queryImage);
+                        DrawRectangle(destination, queryImage);
 
                         // rotations Matrix wird aus homography entnommen
                         double rotationAngleDegrees = CalcRotation(homography);
 
-                        // Timer
-                        stopwatch.Stop();
-                        string time = stopwatch.Elapsed.ToString().Substring(7, 6);
-
                         double[,] realPosition = RealPosition(ROI, destination);
+
+                        // Timer
+                        string time = Timer.Stop(stopwatch);
 
                         // Konsole gibt werte aus
                         // ---> nicht notwendig
@@ -180,11 +178,10 @@ namespace OpenCV
                 }
             }
             double rotationAngle = Math.Atan2(rotationMatrix[1, 0], rotationMatrix[0, 0]);
-            double rotationAngleDegrees;
-            return rotationAngleDegrees = rotationAngle * (180.0 / Math.PI);
+            return rotationAngle * (180.0 / Math.PI);
         }
 
-        static void drawRectangle(Point2f[] eckpunkte, Mat img)
+        static void DrawRectangle(Point2f[] eckpunkte, Mat img)
         {
             Point[] pointArray = ConvertToPointArray(eckpunkte);
             Cv2.Line(img, pointArray[0], pointArray[1], Scalar.AliceBlue, thickness: 1, lineType: LineTypes.Link8);
@@ -214,10 +211,26 @@ namespace OpenCV
 
         static Mat ResizeImage(Mat image)
         {
-            Size newSize = new Size(image.Cols*BILDGRÖßE, image.Rows*BILDGRÖßE);
+            Size newSize = new Size(image.Cols * BILDGRÖßE, image.Rows * BILDGRÖßE);
             Mat newImage = new Mat();
             Cv2.Resize(image, newImage, newSize, 0, 0, InterpolationFlags.Linear);
             return newImage;
+        }
+    }
+
+    class Timer()
+    {
+        public static void Start(out Stopwatch stopwatch)
+        {
+            stopwatch = new Stopwatch();
+            stopwatch.Start();
+        }
+
+        public static string Stop(Stopwatch stopwatch)
+        {
+            stopwatch.Stop();
+            string time = stopwatch.Elapsed.ToString().Substring(7, 6);
+            return time;
         }
     }
 }
