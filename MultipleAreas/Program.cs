@@ -1,5 +1,6 @@
 ﻿using OpenCvSharp;
 using OpenCvSharp.Features2D;
+using System;
 using System.Drawing;
 using System.Drawing.Printing;
 
@@ -18,19 +19,17 @@ namespace MultipleAreas
             Console.WriteLine("Rotation: " + RValues.Rotation);
             Console.WriteLine("");
 
-            Cv2.ImShow("Result", fullImage);
-            Cv2.WaitKey();
-
             for (var i = 0; i < TValues.Length; i++)
             {
-                Cv2.Circle(fullImage, new OpenCvSharp.Point((int)TValues[i].ExpectedCenter.X, (int)TValues[i].ExpectedCenter.Y), 5, new Scalar(0, 0, 255), 2);
-
                 Console.WriteLine("Centerpoint " + i + ": " + RValues.CenterPoints[i]);
                 Console.WriteLine("OffsetX " + i + ": " + RValues.OffsetX[i]);
                 Console.WriteLine("OffsetY " + i + ": " + RValues.OffsetY[i]);
                 Console.WriteLine("");
             }
 
+
+            Mat allTemplates = TemplatesZusammenfassen(TValues);
+            Cv2.ImShow("AllTemplates", allTemplates);
             Cv2.ImShow("Result", fullImage);
             Cv2.WaitKey();
         }
@@ -97,7 +96,7 @@ namespace MultipleAreas
                 Point2f[] points = { new Point2f(0, 0), new Point2f(0, template.TemplateImage.Rows - 1), new Point2f(template.TemplateImage.Cols - 1, template.TemplateImage.Rows - 1), new Point2f(template.TemplateImage.Cols - 1, 0) };
 
                 Point2f centerPoint = GetCenterPoint(points);
-                Cv2.Circle(template.TemplateImage, new OpenCvSharp.Point((int)centerPoint.X, (int)centerPoint.Y), 5, Scalar.Red, 2);
+                Cv2.Circle(template.TemplateImage, new OpenCvSharp.Point((int)centerPoint.X, (int)centerPoint.Y), 2, Scalar.Red, 2);
 
                 DrawRectangle(points, template.TemplateImage);
 
@@ -129,9 +128,9 @@ namespace MultipleAreas
 
         static TemplateValues[] GetTemplateValues(Mat fullImage)
         {
-            TemplateValues TV1 = new TemplateValues(fullImage, new Rect(1060, 100, 150, 160));
-            TemplateValues TV2 = new TemplateValues(fullImage, new Rect(446, 117, 410, 33));
-            TemplateValues TV3 = new TemplateValues(fullImage, new Rect(168, 110, 160, 55));
+            TemplateValues TV1 = new TemplateValues(fullImage, new Rect(1060, 100, 150, 160)); // Land
+            TemplateValues TV2 = new TemplateValues(fullImage, new Rect(446, 120, 410, 37)); // Überschrift
+            TemplateValues TV3 = new TemplateValues(fullImage, new Rect(168, 110, 160, 55)); // Passport
             return new TemplateValues[] { TV1, TV2, TV3 };
         }
 
@@ -202,5 +201,34 @@ namespace MultipleAreas
             Cv2.Line(img, pointArray[2], pointArray[3], Scalar.AliceBlue, thickness: 1, lineType: LineTypes.Link8);
             Cv2.Line(img, pointArray[3], pointArray[0], Scalar.AliceBlue, thickness: 1, lineType: LineTypes.Link8);
         }
+
+        static Mat TemplatesZusammenfassen(TemplateValues[] bilder)
+        {
+            int breite = 0;
+            int hoeheMax = 0;
+
+            foreach (var bild in bilder)
+            {
+                breite += bild.TemplateImage.Cols;
+                hoeheMax = Math.Max(hoeheMax, bild.TemplateImage.Rows);
+            }
+
+            Mat zusammengefasstesBild = new Mat(hoeheMax, breite, MatType.CV_8UC3);
+
+            int xOffset = 0;
+            foreach (var bild in bilder)
+            {
+                Mat bildMat = bild.TemplateImage;
+
+                Mat roi = zusammengefasstesBild[new Rect(xOffset, 0, bildMat.Cols, bildMat.Rows)];
+
+                bildMat.CopyTo(roi);
+
+                xOffset += bildMat.Cols;
+            }
+
+            return zusammengefasstesBild;
+        }
+
     }
 }
