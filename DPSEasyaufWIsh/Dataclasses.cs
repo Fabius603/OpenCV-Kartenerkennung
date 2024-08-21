@@ -1,6 +1,6 @@
 ﻿using OpenCvSharp;
 
-namespace MultipleAreas
+namespace DPSEasyaufWish
 {
     public class TemplateValues
     {
@@ -27,20 +27,26 @@ namespace MultipleAreas
         public Rect[] MaskROIs { get; set; }
         public Mat Mask { get; set; }
 
-        public QueryValues(Mat fullImage, Rect roi, Rect[] MaskROIs)
+        public QueryValues(Mat fullImage, Rect roi, TemplateValues[] TValues)
         {
             QueryImage = fullImage.SubMat(roi);
             ROI = roi;
-            Mask = createMask(roi, MaskROIs);
+            Mask = createMask(roi, TValues);
         }
 
-        public Mat createMask(Rect roi, Rect[] rects)
+        public Mat createMask(Rect roi, TemplateValues[] TValues)
         {
             Mat mask = new Mat(roi.Height, roi.Width, MatType.CV_8UC1, Scalar.All(0));
 
-            foreach (var rect in rects)
+            foreach (var rect in TValues)
             {
-                Cv2.Rectangle(mask, new Rect(rect.X - roi.X, rect.Y - roi.Y, rect.Width, rect.Height), Scalar.All(255), -1);
+                Cv2.Rectangle(mask, new Rect(
+                    rect.TemplateArea.X - roi.X - 50,
+                    rect.TemplateArea.Y - roi.Y - 50,
+                    rect.TemplateArea.Width + 100,
+                    rect.TemplateArea.Height + 100),
+                    Scalar.All(255),
+                    -1);
             }
 
             Cv2.ImShow("test", mask);
@@ -54,7 +60,7 @@ namespace MultipleAreas
         public double[] OffsetX { get; set; }
         public double[] OffsetY { get; set; }
         public Point2f[] CenterPoints { get; set; }
-
+        public string? Time { get; set; }
         public ResultValues(double rotation, Point2f[] centerPoints, double[] offsetX, double[] offsetY)
         {
             Rotation = rotation;
