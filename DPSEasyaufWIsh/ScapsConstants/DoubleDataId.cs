@@ -1,0 +1,83 @@
+﻿//using System.Runtime.InteropServices.WindowsRuntime;
+
+namespace DPSEasyaufWish.ScapsConstants
+{
+    /// <summary>
+    ///http://download.scaps.com/downloads/Software/Programming/Client_Control_Interface/Manual/html/double_value_types.htm
+    /// </summary>
+    public enum DoubleDataId
+    {
+        TextSize = 1,
+        TextCharSpacing = 2,
+        TextLengthLimit = 3,
+        TextHeightLimit = 4,
+        TextRadius = 5,
+        TextStartAngle = 6,
+        TextPointResolution = 7,
+        TextBaseline = 8,
+        TextRadialCenterX = 9,
+        TextRadialCenterY = 10,
+        TextLineSpacing = 11,
+        BitmapIntensity = 33,
+        BitmapBrightness = 34,
+        BitmapDitherstep = 35,
+        TextOrientation = 36,
+        HatchDistance1 = 37,
+        HatchAngle1 = 38,
+        HatchMinjump1 = 39,
+        HatchStartoffset1 = 40,
+        HatchLinereduct1 = 41,
+        HatchEndoffset1 = 42,
+        HatchBeamcompensation1 = 43,
+        HatchNumloops1 = 44,
+        HatchDistance2 = 45,
+        HatchAngle2 = 46,
+        HatchMinjump2 = 47,
+        HatchStartoffset2 = 48,
+        HatchLinereduct2 = 49,
+        HatchEndoffset2 = 50,
+        HatchBeamcompensation2 = 51,
+        HatchNumloops2 = 52,
+        BarcodeLinereduction = 69,
+        MotfOffset = 70,
+        EntityRotationAngle = 71,
+        DataMatrixCellSizeX = 72,
+        DataMatrixCellSizeY = 73,
+        Spiral2DInnerRadius = 74,
+        Spiral2DOuterRadius = 75,
+        Spiral2DRise = 76,
+        Ellipse2DRadiusX = 77,
+        Ellipse2DRadiusY = 78,
+        Ellipse2DCenterX = 79,
+        Ellipse2DCenterY = 80,
+        DataMatrixQuietZoneX = 81,
+        DataMatrixQuietZoneY = 82,
+        HatchPointOffset1 = 83,
+        HatchMinLength1 = 84,
+        HatchPointOffset2 = 85,
+        HatchMinLength2 = 86,
+        DataMatrixDistanceBetweenDots = 87,
+        SecondaryHeadTransformationOffsetX = 88,
+        SecondaryHeadTransformationOffsetY = 89,
+        SecondaryHeadTransformationScaleX = 90,
+        SecondaryHeadTransformationScaleY = 91,
+        SecondaryHeadTransformationRotation = 92,
+        HatchLineIndexStep1 = 93,
+        HatchLineIndexStep2 = 94,
+        HatchVarAngle1 = 95,
+        HatchVarAngle2 = 96,
+        GetMotionCtrlPos = 97,
+        Ellipse2DSegmentCount = 98,
+        HatchLoopAngle1 = 99,
+        HatchLoopAngle2 = 100,
+        HatchLayerSolidUpDownSkinBeamComp = 101,
+        HatchLayerSolidMinUpSkinArea = 102,
+        HatchLayerSolidMinDownSkinArea = 103,
+        HatchLayerSolidReduceUp = 104,
+        HatchLayerSolidReduceDown = 105,
+
+
+        RotationAngle = 71
+    };
+}
+
