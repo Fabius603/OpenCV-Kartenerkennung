@@ -78,11 +78,13 @@ namespace OpenCV
                         Mat homography = Cv2.FindHomography(InputArray.Create(trainPoints), InputArray.Create(queryPoints), HomographyMethods.Ransac, 5.0);
 
                         // Eckpunkte des trainImage werden mit Umrechnungsfaktoren für queryImage berechnet
+
                         Point2f[] points = { new Point2f(0, 0), new Point2f(0, trainImage.Rows - 1), new Point2f(trainImage.Cols - 1, trainImage.Rows - 1), new Point2f(trainImage.Cols - 1, 0) };
                         Point2f[] destination = Cv2.PerspectiveTransform(points, homography);
 
                         // Bereich des trainImage in das queryImage einzeichnen
                         // ---> nicht notwendig
+
                         IEnumerable<OpenCvSharp.KeyPoint> keyPointEnumerable = ConvertToEnumerable(destination);
                         Cv2.DrawKeypoints(queryImage, keyPointEnumerable, queryImage, Scalar.Lime, DrawMatchesFlags.Default);
                         DrawRectangle(destination, queryImage);

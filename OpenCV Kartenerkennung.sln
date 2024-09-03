@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MultipleAreas", "MultipleAr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DPSEasyaufWish", "DPSEasyaufWIsh\DPSEasyaufWish.csproj", "{B3F29FE4-8890-43A5-B917-444513E03E70}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisionMultiArea", "VisionMultiArea\VisionMultiArea.csproj", "{A1225D63-4B58-4003-BAE7-1E1ADCECDE0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{B3F29FE4-8890-43A5-B917-444513E03E70}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B3F29FE4-8890-43A5-B917-444513E03E70}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B3F29FE4-8890-43A5-B917-444513E03E70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1225D63-4B58-4003-BAE7-1E1ADCECDE0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1225D63-4B58-4003-BAE7-1E1ADCECDE0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1225D63-4B58-4003-BAE7-1E1ADCECDE0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1225D63-4B58-4003-BAE7-1E1ADCECDE0C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

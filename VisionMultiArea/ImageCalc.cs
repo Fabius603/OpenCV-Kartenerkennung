@@ -7,15 +7,15 @@ using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using System.Runtime.InteropServices;
 using uEye;
 
-namespace DPSEasyaufWish
+namespace VisionMultiArea
 {
     public class ImageCalc
     {
-        public static ResultValues CalculateImage(Mat template, Mat fullImage)
+        public static ResultValues CalculateImage(Mat template, Mat fullImage, Rect[] rects)
         {
             Timer.Start(out Stopwatch stopwatch);
 
-            TemplateValues[] TValues = GetTemplateValues(template);
+            TemplateValues[] TValues = GetTemplateValues(template, rects, fullImage);
             QueryValues QValues = GetQueryValues(fullImage, TValues);
 
             ResultValues RValues = CalculateRotation(TValues, QValues);
@@ -23,33 +23,59 @@ namespace DPSEasyaufWish
             RValues.Time = Timer.Stop(stopwatch);
 
             Cv2.Rectangle(fullImage, QValues.ROI, Scalar.Red, 2);
-            Cv2.ImShow("Result", fullImage);
+            RValues.ResultImage = fullImage;
 
-            Mat allTemplates = TemplatesZusammenfassen(TValues);
-            Cv2.ImShow("AllTemplates", allTemplates);
+            //Mat allTemplates = TemplatesZusammenfassen(TValues);
+            //Cv2.ImShow("AllTemplates", allTemplates);
             Cv2.WaitKey();
             return RValues;
         }
 
         private static QueryValues GetQueryValues(Mat fullImage, TemplateValues[] TValues)
         {
-            // Hier müssen die Koordinaten des ROIs angepasst werden
-
-            Rect roi = new Rect(70, 40, 1200, 240);
+            Rect roi = GetROI(TValues);
+            roi = AdjustRoiToFit(fullImage, roi);
 
             QueryValues QValues = new QueryValues(fullImage, roi, TValues);
             return QValues;
         }
 
-        private static TemplateValues[] GetTemplateValues(Mat template)
+        public static Rect GetROI(TemplateValues[] TValues)
         {
-            // Hier müssen die Koordinaten der Templates angepasst werden
-            // Wenn Templates keine ungeraden Dimensionen haben, gibt es keine genaue Mitte
+            int minX = TValues[0].TemplateArea.X;
+            int minY = TValues[0].TemplateArea.Y;
+            int maxX = TValues[0].TemplateArea.X + TValues[0].TemplateArea.Width;
+            int maxY = TValues[0].TemplateArea.Y + TValues[0].TemplateArea.Height;
 
-            TemplateValues TV1 = new TemplateValues(template, new Rect(1060, 100, 151, 161)); // Land
-            TemplateValues TV2 = new TemplateValues(template, new Rect(446, 120, 411, 37)); // Überschrift
-            TemplateValues TV3 = new TemplateValues(template, new Rect(168, 110, 161, 55)); // Passport
-            return new TemplateValues[] { TV1, TV2, TV3 };
+            foreach (var template in TValues)
+            {
+                if (template.TemplateArea.X < minX)
+                    minX = template.TemplateArea.X;
+
+                if (template.TemplateArea.Y < minY)
+                    minY = template.TemplateArea.Y;
+
+                if (template.TemplateArea.X + template.TemplateArea.Width > maxX)
+                    maxX = template.TemplateArea.X + template.TemplateArea.Width;
+
+                if (template.TemplateArea.Y + template.TemplateArea.Height > maxY)
+                    maxY = template.TemplateArea.Y + template.TemplateArea.Height;
+            }
+
+            int width = maxX - minX;
+            int height = maxY - minY;
+
+            return new Rect(minX - 70, minY - 70, width + 140, height + 140);
+        }
+
+        private static TemplateValues[] GetTemplateValues(Mat template, Rect[] Rects, Mat fullImage)
+        {
+            TemplateValues[] templateValues = new TemplateValues[Rects.Length];
+            for(int i = 0; i < Rects.Length; i++)
+            {
+                templateValues[i] = new TemplateValues(template, AdjustRoiToFit(fullImage, Rects[i]));
+            }
+            return templateValues;
         }
 
         private static ResultValues CalculateRotation(TemplateValues[] TValues, QueryValues QValues)
@@ -285,6 +311,19 @@ namespace DPSEasyaufWish
             }
 
             return zusammengefasstesBild;
+        }
+
+        private static Rect AdjustRoiToFit(Mat image, Rect roi)
+        {
+            int imgWidth = image.Width;
+            int imgHeight = image.Height;
+
+            int x = Math.Max(0, roi.X);
+            int y = Math.Max(0, roi.Y);
+            int width = Math.Min(roi.Width, imgWidth - x);
+            int height = Math.Min(roi.Height, imgHeight - y);
+
+            return new Rect(x, y, width, height);
         }
 
         public static Mat ToMat(Bitmap src)

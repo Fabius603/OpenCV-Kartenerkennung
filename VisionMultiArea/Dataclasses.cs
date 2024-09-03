@@ -1,6 +1,6 @@
 ﻿using OpenCvSharp;
 
-namespace DPSEasyaufWish
+namespace VisionMultiArea
 {
     public class TemplateValues
     {
@@ -49,7 +49,7 @@ namespace DPSEasyaufWish
                     -1);
             }
 
-            Cv2.ImShow("test", mask);
+            //Cv2.ImShow("test", mask);
             return mask;
         }
     }
@@ -61,6 +61,7 @@ namespace DPSEasyaufWish
         public double[] OffsetY { get; set; }
         public Point2f[] CenterPoints { get; set; }
         public string? Time { get; set; }
+        public Mat ResultImage { get; set; }
         public ResultValues(double rotation, Point2f[] centerPoints, double[] offsetX, double[] offsetY)
         {
             Rotation = rotation;
