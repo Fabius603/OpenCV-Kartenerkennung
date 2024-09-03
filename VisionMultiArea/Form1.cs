@@ -1,4 +1,5 @@
 using OpenCvSharp;
+using System.IO;
 
 namespace VisionMultiArea
 {
@@ -7,24 +8,38 @@ namespace VisionMultiArea
         private System.Drawing.Point startPoint;
         private Rectangle selectionRectangle;
         private List<Rectangle> selectedAreas = new List<Rectangle>();
+        private string TemplatePath = "";
+        private string QuerryPath = "";
 
         public Vision()
         {
             InitializeComponent();
-            pictureBox1.Image = Image.FromFile("C:\\Users\\schlieper\\source\\repos\\OpenCV Kartenerkennung\\VisionMultiArea\\Template.bmp");
-            pictureBox1.SizeMode = PictureBoxSizeMode.AutoSize;
+            TemplatePictureBox.SizeMode = PictureBoxSizeMode.AutoSize;
+            QuerryPictureBox.SizeMode = PictureBoxSizeMode.Zoom;
             this.Focus();
 
-            pictureBox1.MouseDown += pictureBox1_MouseDown;
-            pictureBox1.MouseMove += pictureBox1_MouseMove;
-            pictureBox1.MouseUp += pictureBox1_MouseUp;
-            pictureBox1.Paint += pictureBox1_Paint;
+            TemplatePictureBox.MouseDown += TemplatePictureBox_MouseDown;
+            TemplatePictureBox.MouseMove += TemplatePictureBox_MouseMove;
+            TemplatePictureBox.MouseUp += TemplatePictureBox_MouseUp;
+            TemplatePictureBox.Paint += TemplatePictureBox_Paint;
 
             this.KeyDown += Form1_KeyDown;
             this.KeyPreview = true;
 
             this.WindowState = FormWindowState.Maximized;
-            PositionResultLabel();
+            PositionToTemplatePictureBox();
+            TryLoadPctures();
+        }
+
+        private void TryLoadPctures()
+        {
+            try
+            {
+                string templatePath = "C:\\Users\\schlieper\\OneDrive - Otto Künnecke GmbH\\Pictures\\LaserRotation\\Template.bmp";
+                string querryPath = "C:\\Users\\schlieper\\OneDrive - Otto Künnecke GmbH\\Pictures\\LaserRotation\\QuerryImage.bmp";
+                SetNewTemplatePicture(templatePath);
+                SetNewQuerryPicture(querryPath);
+            } catch { }
         }
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
@@ -34,31 +49,35 @@ namespace VisionMultiArea
                 if (selectedAreas.Count > 0)
                 {
                     selectedAreas.RemoveAt(selectedAreas.Count - 1);
-                    pictureBox1.Invalidate();
+                    TemplatePictureBox.Invalidate();
                 }
             }
         }
 
-        private void PositionResultLabel()
+        private void PositionToTemplatePictureBox()
         {
-            if (pictureBox1 != null && ResultValueLabel != null)
+            if (TemplatePictureBox != null && ResultValueLabel != null)
             {
-                ResultValueLabel.Location = new System.Drawing.Point(pictureBox1.Right + 10, pictureBox1.Top);
+                ResultValueLabel.Location = new System.Drawing.Point(TemplatePictureBox.Right + 10, TemplatePictureBox.Top);
+            }
+            if(QuerryPictureBox != null && TemplatePictureBox != null)
+            {
+                QuerryPictureBox.Location = new System.Drawing.Point(TemplatePictureBox.Right + 10, TemplatePictureBox.Bottom - QuerryPictureBox.Height);
             }
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            PositionResultLabel();
+            PositionToTemplatePictureBox();
         }
 
-        private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
+        private void TemplatePictureBox_MouseDown(object sender, MouseEventArgs e)
         {
             startPoint = e.Location;
         }
 
-        private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
+        private void TemplatePictureBox_MouseMove(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
@@ -67,18 +86,18 @@ namespace VisionMultiArea
                 int width = Math.Abs(startPoint.X - e.X);
                 int height = Math.Abs(startPoint.Y - e.Y);
                 selectionRectangle = new Rectangle(x, y, width, height);
-                pictureBox1.Invalidate();
+                TemplatePictureBox.Invalidate();
             }
         }
 
-        private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
+        private void TemplatePictureBox_MouseUp(object sender, MouseEventArgs e)
         {
             selectedAreas.Add(selectionRectangle);
             selectionRectangle = Rectangle.Empty;
-            pictureBox1.Invalidate();
+            TemplatePictureBox.Invalidate();
         }
 
-        private void pictureBox1_Paint(object sender, PaintEventArgs e)
+        private void TemplatePictureBox_Paint(object sender, PaintEventArgs e)
         {
             if (selectionRectangle != Rectangle.Empty)
             {
@@ -99,14 +118,19 @@ namespace VisionMultiArea
                 MessageBox.Show("Mindestens ein Rechteck auswählen.");
                 return;
             }
+            else if(TemplatePath == "" || QuerryPath == "")
+            {
+                MessageBox.Show("Template und Querry müssen gegeben sein!");
+                return;
+            }
 
             try
             {
                 Cv2.DestroyWindow("Result");
-            } catch { }
-
-            Mat template = new Mat("Template.bmp");
-            Mat fullImage = new Mat("FullImage.bmp");
+            }
+            catch { }
+            Mat template = new Mat(TemplatePath);
+            Mat fullImage = new Mat(QuerryPath);
 
             ResultValues RValues = ImageCalc.CalculateImage(template, fullImage, ToOpenCvRect(selectedAreas));
             Ausgabe(RValues);
@@ -137,7 +161,7 @@ namespace VisionMultiArea
 
             Cv2.ImShow("Result", image);
 
-            Cv2.WaitKey(0); 
+            Cv2.WaitKey(0);
         }
 
         private void Ausgabe(ResultValues RValues)
@@ -163,6 +187,82 @@ namespace VisionMultiArea
             }
 
             ResultValueLabel.Text = resultText.ToString();
+        }
+
+        private string GetFilePath()
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                string selectedFilePath = "";
+                string picturesFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+                openFileDialog.InitialDirectory = picturesFolderPath;
+                openFileDialog.Filter = "All files (*.*)|*.*|Image files (*.jpg;*.jpeg;*.png)|*.jpg;*.jpeg;*.png";
+                openFileDialog.FilterIndex = 1;
+                openFileDialog.RestoreDirectory = true;
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    selectedFilePath = openFileDialog.FileName;
+                    return selectedFilePath;
+                }
+                return "";
+            }
+        }
+
+        private void SetNewTemplatePicture(string path)
+        {
+            if (path == "")
+            {
+                return;
+            }
+
+            TemplatePath = path;
+
+            using (var originalImage = Image.FromFile(path))
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    originalImage.Save(memoryStream, originalImage.RawFormat);
+                    memoryStream.Position = 0;
+                    TemplatePictureBox.Image = Image.FromStream(memoryStream);
+                }
+            }
+
+            PositionToTemplatePictureBox();
+        }
+
+        private void SetNewQuerryPicture(string path)
+        {
+            if (path == "")
+            {
+                return;
+            }
+
+            QuerryPath = path;
+
+            using (var originalImage = Image.FromFile(path))
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    originalImage.Save(memoryStream, originalImage.RawFormat);
+                    memoryStream.Position = 0;
+                    QuerryPictureBox.Image = Image.FromStream(memoryStream);
+                }
+            }
+
+            PositionToTemplatePictureBox();
+        }
+
+        private void LoadTemplateButton_Click(object sender, EventArgs e)
+        {
+            string path = GetFilePath();
+            SetNewTemplatePicture(path);
+        }
+
+        private void LoadQuerryButton_Click(object sender, EventArgs e)
+        {
+            string path = GetFilePath();
+            SetNewQuerryPicture(path);
         }
     }
 }

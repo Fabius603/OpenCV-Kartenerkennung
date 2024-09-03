@@ -88,12 +88,21 @@ namespace VisionMultiArea
             List<List<KeyPoint>> allKeyPoints = new List<List<KeyPoint>>();
             List<Mat> allDescriptors = new List<Mat>();
 
+            Point2f pointOfTemplateWithMostKeyPoints = new Point2f(0, 0);
+            int mostKeyPoints = 0;
+
             foreach (TemplateValues TValue in TValues)
             {
                 Mat templateDescriptors = new Mat();
                 sift.DetectAndCompute(TValue.TemplateImage, null, out KeyPoint[] templateKeypoints, templateDescriptors);
                 allKeyPoints.Add(templateKeypoints.ToList());
                 allDescriptors.Add(templateDescriptors);
+
+                if(templateKeypoints.Length > mostKeyPoints)
+                {
+                    mostKeyPoints = templateKeypoints.Length;
+                    pointOfTemplateWithMostKeyPoints = new Point2f(TValue.TemplateArea.X, TValue.TemplateArea.Y);
+                }
             }
 
             Mat queryDescriptors = new Mat();
@@ -133,13 +142,12 @@ namespace VisionMultiArea
             double[] allOffsetY = new double[TValues.Length];
 
             int index = 0;
-            Point2f leftmostPoint = FindLeftmostPoint(TValues);
 
             foreach (var template in TValues)
             {
 
-                float xVerschiebung = template.TemplateArea.X - leftmostPoint.X;
-                float yVerschiebung = template.TemplateArea.Y - leftmostPoint.Y;
+                float xVerschiebung = template.TemplateArea.X - pointOfTemplateWithMostKeyPoints.X;
+                float yVerschiebung = template.TemplateArea.Y - pointOfTemplateWithMostKeyPoints.Y;
 
                 Point2f[] points = 
                 { 
@@ -151,8 +159,10 @@ namespace VisionMultiArea
 
                 Point2f[] destination = Cv2.PerspectiveTransform(points, invertetHomography);
                
+                DrawRectangle(destination, QValues.QueryImage);
 
                 double[,] realPosition = RealPosition(QValues.ROI, destination);
+
 
                 Point2f centerPoint = GetCenterPoint(realPosition);
 
@@ -163,6 +173,13 @@ namespace VisionMultiArea
                 allCenterpoints[index] = centerPoint;
                 allOffsetX[index] = offsetX;
                 allOffsetY[index] = offsetY;
+
+                Point2f averageOffset = new Point2f(0, 0);
+                for(var i = 0; i < allOffsetX.Length; i++)
+                {
+                    averageOffset.X += (float)allOffsetX[i];
+                    averageOffset.Y += (float)allOffsetY[i];
+                }
                 index++;
             }
 
@@ -171,23 +188,6 @@ namespace VisionMultiArea
 
 
             return new ResultValues(rotationAnglesDegrees, allCenterpoints, allOffsetX, allOffsetY);
-        }
-
-
-        private static Point2f FindLeftmostPoint(TemplateValues[] templateValues)
-        {
-            Point2f leftmostPoint = new Point2f(templateValues[0].TemplateArea.X, templateValues[0].TemplateArea.Y);
-
-            foreach (var template in templateValues)
-            {
-                Point2f point = new Point2f(template.TemplateArea.X, template.TemplateArea.Y);
-                if (point.X < leftmostPoint.X)
-                {
-                    leftmostPoint = point;
-                }
-            }
-
-            return leftmostPoint;
         }
 
         private static void DrawPointsOnImage(double[,] points, Mat image)
