@@ -87,9 +87,10 @@
             // 
             // QuerryPictureBox
             // 
-            QuerryPictureBox.Location = new Point(631, 168);
+            QuerryPictureBox.Location = new Point(631, 152);
             QuerryPictureBox.Name = "QuerryPictureBox";
-            QuerryPictureBox.Size = new Size(463, 304);
+            QuerryPictureBox.Size = new Size(419, 320);
+            QuerryPictureBox.SizeMode = PictureBoxSizeMode.Zoom;
             QuerryPictureBox.TabIndex = 5;
             QuerryPictureBox.TabStop = false;
             // 

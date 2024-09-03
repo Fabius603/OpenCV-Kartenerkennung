@@ -6,6 +6,7 @@ using System.Drawing;
 using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using System.Runtime.InteropServices;
 using uEye;
+using System;
 
 namespace VisionMultiArea
 {
@@ -140,6 +141,8 @@ namespace VisionMultiArea
             Point2f[] allCenterpoints = new Point2f[TValues.Length];
             double[] allOffsetX = new double[TValues.Length];
             double[] allOffsetY = new double[TValues.Length];
+            Point2f averageOffset = new Point2f(0, 0);
+
 
             int index = 0;
 
@@ -174,12 +177,13 @@ namespace VisionMultiArea
                 allOffsetX[index] = offsetX;
                 allOffsetY[index] = offsetY;
 
-                Point2f averageOffset = new Point2f(0, 0);
                 for(var i = 0; i < allOffsetX.Length; i++)
                 {
                     averageOffset.X += (float)allOffsetX[i];
                     averageOffset.Y += (float)allOffsetY[i];
                 }
+                averageOffset.X /= allOffsetX.Length;
+                averageOffset.Y /= allOffsetY.Length;
                 index++;
             }
 
@@ -187,7 +191,7 @@ namespace VisionMultiArea
 
 
 
-            return new ResultValues(rotationAnglesDegrees, allCenterpoints, allOffsetX, allOffsetY);
+            return new ResultValues(rotationAnglesDegrees, allCenterpoints, allOffsetX, allOffsetY, averageOffset);
         }
 
         private static void DrawPointsOnImage(double[,] points, Mat image)

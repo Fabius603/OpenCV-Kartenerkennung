@@ -1,5 +1,6 @@
 using OpenCvSharp;
 using System.IO;
+using System.Windows.Forms;
 
 namespace VisionMultiArea
 {
@@ -10,6 +11,8 @@ namespace VisionMultiArea
         private List<Rectangle> selectedAreas = new List<Rectangle>();
         private string TemplatePath = "";
         private string QuerryPath = "";
+        private bool isMouseHoveringonTemplate = false;
+        private bool isMouseHoveringonQuerry = false;
 
         public Vision()
         {
@@ -23,15 +26,44 @@ namespace VisionMultiArea
             TemplatePictureBox.MouseUp += TemplatePictureBox_MouseUp;
             TemplatePictureBox.Paint += TemplatePictureBox_Paint;
 
+            TemplatePictureBox.MouseEnter += new EventHandler(TemplatePictureBox_MouseEnter);
+            TemplatePictureBox.MouseLeave += new EventHandler(TemplatePictureBox_MouseLeave);
+
+            QuerryPictureBox.Paint += QuerryPictureBox_Paint;
+
+            QuerryPictureBox.MouseEnter += new EventHandler(QuerryPictureBox_MouseEnter);
+            QuerryPictureBox.MouseLeave += new EventHandler(QuerryPictureBox_MouseLeave);
+
             this.KeyDown += Form1_KeyDown;
             this.KeyPreview = true;
 
             this.WindowState = FormWindowState.Maximized;
             PositionToTemplatePictureBox();
-            TryLoadPctures();
+            TryLoadPictures();
         }
 
-        private void TryLoadPctures()
+        private void TemplatePictureBox_MouseEnter(object sender, EventArgs e)
+        {
+            isMouseHoveringonTemplate = true;
+            TemplatePictureBox.Invalidate();
+        }
+        private void TemplatePictureBox_MouseLeave(object sender, EventArgs e)
+        {
+            isMouseHoveringonTemplate = false;
+            TemplatePictureBox.Invalidate();
+        }
+        private void QuerryPictureBox_MouseEnter(object sender, EventArgs e)
+        {
+            isMouseHoveringonQuerry = true;
+            QuerryPictureBox.Invalidate();
+        }
+        private void QuerryPictureBox_MouseLeave(object sender, EventArgs e)
+        {
+            isMouseHoveringonQuerry = false;
+            QuerryPictureBox.Invalidate();
+        }
+
+        private void TryLoadPictures()
         {
             try
             {
@@ -104,10 +136,28 @@ namespace VisionMultiArea
                 e.Graphics.DrawRectangle(Pens.Red, selectionRectangle);
             }
 
-            // Zeichne alle gespeicherten Rechtecke
             foreach (var rect in selectedAreas)
             {
                 e.Graphics.DrawRectangle(Pens.Blue, rect);
+            }
+
+            if (isMouseHoveringonTemplate)
+            {
+                string text = "Template";
+                Font font = new Font("Arial", 12, FontStyle.Bold);
+                SolidBrush brush = new SolidBrush(Color.White);
+                e.Graphics.DrawString(text, font, brush, new PointF(5, 5));
+            }
+        }
+        
+        private void QuerryPictureBox_Paint(object sender, PaintEventArgs e)
+        {
+            if (isMouseHoveringonQuerry)
+            {
+                string text = "Querry";
+                Font font = new Font("Arial", 12, FontStyle.Bold);
+                SolidBrush brush = new SolidBrush(Color.White);
+                e.Graphics.DrawString(text, font, brush, new PointF(5, 5));
             }
         }
 
@@ -172,20 +222,13 @@ namespace VisionMultiArea
             resultText.AppendLine($"Rotation: {RValues.Rotation}\n");
 
             int length = RValues.CenterPoints.Length;
-            if (RValues.OffsetX.Length == length && RValues.OffsetY.Length == length)
+            for (int i = 0; i < length; i++)
             {
-                for (int i = 0; i < length; i++)
-                {
-                    resultText.AppendLine($"Centerpoint {i}: {RValues.CenterPoints[i]}");
-                    resultText.AppendLine($"OffsetX {i}: {RValues.OffsetX[i]}");
-                    resultText.AppendLine($"OffsetY {i}: {RValues.OffsetY[i]}\n");
-                }
+                resultText.AppendLine($"Centerpoint {i}: {RValues.CenterPoints[i]}");
+                resultText.AppendLine($"OffsetX {i}: {RValues.OffsetX[i]}");
+                resultText.AppendLine($"OffsetY {i}: {RValues.OffsetY[i]}\n");
             }
-            else
-            {
-                resultText.AppendLine("Fehler: Die Arrays haben unterschiedliche Längen.");
-            }
-
+            resultText.AppendLine($"AverageOffset: {RValues.AverageOffset}");
             ResultValueLabel.Text = resultText.ToString();
         }
 

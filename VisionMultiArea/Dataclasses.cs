@@ -62,12 +62,14 @@ namespace VisionMultiArea
         public Point2f[] CenterPoints { get; set; }
         public string? Time { get; set; }
         public Mat ResultImage { get; set; }
-        public ResultValues(double rotation, Point2f[] centerPoints, double[] offsetX, double[] offsetY)
+        public Point2f AverageOffset { get; set; }
+        public ResultValues(double rotation, Point2f[] centerPoints, double[] offsetX, double[] offsetY, Point2f averageOffset)
         {
             Rotation = rotation;
             CenterPoints = centerPoints;
             OffsetX = offsetX;
             OffsetY = offsetY;
+            AverageOffset = averageOffset;
         }
     }
 }
