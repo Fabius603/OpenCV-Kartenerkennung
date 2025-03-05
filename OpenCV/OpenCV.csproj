@@ -14,4 +14,13 @@
     <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.8.0.20230708" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="images\SIFT\queryImage\BildKarte.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="images\SIFT\trainImage\Matcher.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

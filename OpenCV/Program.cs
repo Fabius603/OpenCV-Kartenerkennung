@@ -8,10 +8,13 @@ namespace OpenCV
 {
     internal class Program
     {
-        const int MIN_MATCH_COUNT = 10; // Mindestanzahl der übereinstimmenden KeyPoints
-        const double GENAUIGKEIT = 0.7; // Wie genau soll die Übereinstimmung sein
-        const double BILDGRÖßE = 0.7; // Faktor zur Vergrößerung/Verkleinerung des Bildes
-        const string DIRECTORY = "C:/Users/schlieper/source/repos/OpenCV Kartenerkennung/OpenCV/";
+
+        const double REAL_DISTANCE_MM = 10.0; // Real distance between Chessboard corners
+
+        const int MIN_MATCH_COUNT = 10; // Minimal count of matching Keypoints
+        const double GENAUIGKEIT = 0.7;
+        const double BILDGRÖßE = 0.7; // Up-/Downscale the Image
+        static string DIRECTORY = "C:\\Users\\skhumat\\Desktop\\CARTE\\OpenCV Kartenerkennung\\OpenCV\\images\\";
 
         struct TrainerValues
         {
@@ -28,12 +31,25 @@ namespace OpenCV
 
         static void Main(string[] args)
         {
-            bool repeat = true;
-            TrainerValues TV = TrainerLaden();
-            QueryValues QV = QueryLaden();
-            while(repeat == true)
+
+            // Method selection: true — Chessboard, false — 4 points (SIFT)
+            bool useChessboard = true; // МChange to false to use SIFT
+
+            if (useChessboard)
             {
-                repeat = Vergleichen(TV.KP_TRAIN, TV.DES_TRAIN, TV.IMG, QV.ROI);
+                DIRECTORY += "Chessboard\\";
+                ProcessChessboard(); // Method for Chessboard
+            }
+            else
+            {
+                DIRECTORY += "Chessboard\\";
+                bool repeat = true;
+                TrainerValues TV = TrainerLaden();
+                QueryValues QV = QueryLaden();
+                while (repeat == true)
+                {
+                    repeat = Vergleichen(TV.KP_TRAIN, TV.DES_TRAIN, TV.IMG, QV.ROI);
+                }
             }
         }
 
@@ -44,17 +60,17 @@ namespace OpenCV
             string queryImagePath = $"{DIRECTORY}queryImage/{new System.IO.DirectoryInfo($"{DIRECTORY}queryImage").GetFiles().First().Name}";
 
 
-            // Bilder werden aus den beiden Ordnern geladen (die jeweils ersten Dateien im Ordner)
+            // Images get Loaded in
             using (Mat queryImage = new Mat(queryImagePath, ImreadModes.Grayscale).SubMat(ROI))
 
-            // keyPoints und destination wird mit sift berechnet
+            // calculation keypoints with the sift function
             using (SIFT sift = SIFT.Create())
             {
                 KeyPoint[] kp_query;
                 Mat des_query = new Mat();
                 sift.DetectAndCompute(queryImage, null, out kp_query, des_query);
 
-                // KeyPoints der Bilder werden verglichen und alle mit einer Abweichung unter GENAUIGKEIT werden in goodMatches gespeichert
+                // comparing the kepoints of both images and save them in matches
                 using (FlannBasedMatcher matcher = new FlannBasedMatcher())
                 {
 
@@ -70,14 +86,14 @@ namespace OpenCV
 
                     if (goodMatches.Length >= MIN_MATCH_COUNT)
                     {
-                        // Punkte der guten Matches werden berechnet
+                        // Points of the matches get calculated
                         Point2f[] queryPoints = goodMatches.Select(match => kp_query[match.TrainIdx].Pt).ToArray();
                         Point2f[] trainPoints = goodMatches.Select(match => kp_train[match.QueryIdx].Pt).ToArray();
 
-                        // Homography wird erstellt -> Matrix mit verschiedenen Umrechnungsfaktoren
+                        // Homography gets created -> its a matrix with conversion factors
                         Mat homography = Cv2.FindHomography(InputArray.Create(trainPoints), InputArray.Create(queryPoints), HomographyMethods.Ransac, 5.0);
 
-                        // Eckpunkte des trainImage werden mit Umrechnungsfaktoren für queryImage berechnet
+                        // corners get calculated
                         Point2f[] points = { new Point2f(0, 0), new Point2f(0, trainImage.Rows - 1), new Point2f(trainImage.Cols - 1, trainImage.Rows - 1), new Point2f(trainImage.Cols - 1, 0) };
                         Point2f[] destination = Cv2.PerspectiveTransform(points, homography);
 
@@ -87,11 +103,14 @@ namespace OpenCV
                         Cv2.DrawKeypoints(queryImage, keyPointEnumerable, queryImage, Scalar.Lime, DrawMatchesFlags.Default);
                         DrawRectangle(destination, queryImage);
 
-                        // rotations Matrix wird aus homography entnommen
+                        // rotation matrix is read out of the homography(matrix)
                         double rotationAngleDegrees = CalcRotation(homography);
 
                         double[,] realPosition = RealPosition(ROI, destination);
-
+                        Point centerPoint = GetCenterPoint(realPosition);
+                        Cv2.DrawMarker(queryImage, centerPoint, Scalar.Red, markerSize: 5);
+                        double accordance = GetAccordance(goodMatches, kp_train);
+                        Console.WriteLine(accordance);
                         // Timer
                         string time = Timer.Stop(stopwatch);
 
@@ -127,7 +146,7 @@ namespace OpenCV
         static QueryValues QueryLaden()
         {
             QueryValues QV = new QueryValues();
-            // Position des Suchbereichs (x, y, width, height)
+            // region of interest
             QV.ROI = new Rect(1360, 100, 240, 660);
             return QV;
         }
@@ -136,6 +155,7 @@ namespace OpenCV
         {
             string trainImagePath = $"{DIRECTORY}trainImage/{new System.IO.DirectoryInfo($"{DIRECTORY}trainImage").GetFiles().First().Name}";
             Mat trainImage = new Mat(trainImagePath, ImreadModes.Grayscale);
+            Cv2.ImShow("test", trainImage);
             using (SIFT sift = SIFT.Create())
             {
                 TrainerValues TV = new TrainerValues();
@@ -200,6 +220,19 @@ namespace OpenCV
             return realPosition;
         }
 
+        static double GetAccordance(DMatch[] goodMatches, KeyPoint[] trainPoints)
+        {
+            return Math.Round((double)(goodMatches.Length / trainPoints.Length), 0) * 100;
+        }
+
+        static Point GetCenterPoint(double[,] realPosition)
+        {
+            int midX = (int)(realPosition[0, 0] + realPosition[1, 0] + realPosition[2, 0] + realPosition[3, 0]) / 4;
+            int midY = (int)(realPosition[0, 1] + realPosition[1, 1] + realPosition[2, 1] + realPosition[3, 1]) / 4;
+            Point centerPoint = new Point(midX, midY);
+            return centerPoint;
+        }
+
         static void ConsoleOutput(string time, DMatch[] goodMatches, double rotationAngleDegrees, Point2f[] destination, double[,] realPosition)
         {
             Console.WriteLine($"Zeit: {time} Sekunden");
@@ -216,6 +249,67 @@ namespace OpenCV
             Cv2.Resize(image, newImage, newSize, 0, 0, InterpolationFlags.Linear);
             return newImage;
         }
+
+
+
+        // Method for Chessboard
+        static void ProcessChessboard()
+        {
+            // Load test and train images
+            string trainImagePath = $"{DIRECTORY}trainImage/{new System.IO.DirectoryInfo($"{DIRECTORY}trainImage").GetFiles().First().Name}";
+            string queryImagePath = $"{DIRECTORY}queryImage/{new System.IO.DirectoryInfo($"{DIRECTORY}queryImage").GetFiles().First().Name}";
+
+            Mat trainImage = new Mat(trainImagePath, ImreadModes.Grayscale);
+            Mat queryImage = new Mat(queryImagePath, ImreadModes.Grayscale);
+
+            // Apply Blur filter for better detection
+            Cv2.GaussianBlur(queryImage, queryImage, new Size(5, 5), 0);
+
+            // Chessboard size (for example, 9x6 corners)
+            Size patternSize = new Size(9, 6); // Change for your Chessboard !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            // Search for corners
+            Point2f[] corners;
+            bool found = Cv2.FindChessboardCorners(queryImage, patternSize, out corners);
+            if (!found)
+            {
+                Console.WriteLine("Chessboard not found!");
+                return;
+            }
+
+            // Draw corners vor visualization
+            Cv2.DrawChessboardCorners(queryImage, patternSize, corners, found);
+            Cv2.ImShow("Chessboard Corners", queryImage);
+            Cv2.WaitKey(0);
+
+            // Center calculation (X, Y)
+            double centerX = 0, centerY = 0;
+            foreach (var corner in corners)
+            {
+                centerX += corner.X;
+                centerY += corner.Y;
+            }
+            centerX /= corners.Length;
+            centerY /= corners.Length;
+
+            // Calculation of coefficient (mm/pixel) for X and Y
+            double pixelDistanceX = corners[1].X - corners[0].X; // distance in pixels on X
+            double pixelDistanceY = corners[patternSize.Width].Y - corners[0].Y; // distance in pixels on Y
+
+            double mmPerPixelX = REAL_DISTANCE_MM / pixelDistanceX; // Coefficient for X
+            double mmPerPixelY = REAL_DISTANCE_MM / pixelDistanceY; // Coefficient for Y
+
+            // Print results
+            Console.WriteLine($"Center: X={centerX:F2} pixels, Y={centerY:F2} pixels");
+            Console.WriteLine($"Conversion factors: X={mmPerPixelX:F4} mm/pixel, Y={mmPerPixelY:F4} mm/pixel");
+
+            Cv2.DestroyAllWindows();
+        }
+
+
+
+
+
     }
 
     class Timer()
@@ -232,5 +326,11 @@ namespace OpenCV
             string time = stopwatch.Elapsed.ToString().Substring(7, 6);
             return time;
         }
+
+
+
+
+
+
     }
 }
