@@ -14,7 +14,7 @@ namespace OpenCV
         const int MIN_MATCH_COUNT = 10; // Minimal count of matching Keypoints
         const double GENAUIGKEIT = 0.7;
         const double BILDGRÖßE = 0.7; // Up-/Downscale the Image
-        static string DIRECTORY = "C:\\Users\\skhumat\\Desktop\\CARTE\\OpenCV Kartenerkennung\\OpenCV\\images\\";
+        static string DIRECTORY = "C:\\Users\\schlieper\\source\\repos\\OpenCV Kartenerkennung - Chessboard\\OpenCV\\images\\";
 
         struct TrainerValues
         {
@@ -255,59 +255,77 @@ namespace OpenCV
         // Method for Chessboard
         static void ProcessChessboard()
         {
-            // Load test and train images
-            string trainImagePath = $"{DIRECTORY}trainImage/{new System.IO.DirectoryInfo($"{DIRECTORY}trainImage").GetFiles().First().Name}";
-            string queryImagePath = $"{DIRECTORY}queryImage/{new System.IO.DirectoryInfo($"{DIRECTORY}queryImage").GetFiles().First().Name}";
+            // Load all images in the queryImage directory
+            string[] queryImagePaths = System.IO.Directory.GetFiles($"{DIRECTORY}queryImage", "*.png");
 
-            Mat trainImage = new Mat(trainImagePath, ImreadModes.Grayscale);
-            Mat queryImage = new Mat(queryImagePath, ImreadModes.Grayscale);
-
-            // Apply Blur filter for better detection
-            Cv2.GaussianBlur(queryImage, queryImage, new Size(5, 5), 0);
-
-            // Chessboard size (for example, 9x6 corners)
-            Size patternSize = new Size(9, 6); // Change for your Chessboard !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-            // Search for corners
-            Point2f[] corners;
-            bool found = Cv2.FindChessboardCorners(queryImage, patternSize, out corners);
-            if (!found)
+            foreach (string queryImagePath in queryImagePaths)
             {
-                Console.WriteLine("Chessboard not found!");
-                return;
+                Mat queryImage = new Mat(queryImagePath, ImreadModes.Grayscale);
+
+                // Apply Blur filter for better detection
+                Cv2.GaussianBlur(queryImage, queryImage, new Size(5, 5), 0);
+
+                // Chessboard size (for example, 9x6 corners): Size patternSize = new Size(9, 6);
+                // Test different pattern sizes from 3x3 to 7x7
+                bool found = false;
+                Size patternSize = new Size(3, 3);
+                Point2f[] corners = [];
+                for (int width = 3; width <= 7; width++)
+                {
+                    for (int height = 3; height <= 7; height++)
+                    {
+                        patternSize = new Size(width, height);
+
+                        found = Cv2.FindChessboardCorners(queryImage, patternSize, out corners);
+                        if (found)
+                        {
+                            Console.WriteLine($"Chessboard found in image: {queryImagePath} with pattern size: {width}x{height}");
+                            // Draw corners for visualization
+
+
+                            // Center calculation (X, Y)
+                            double centerX = 0, centerY = 0;
+                            foreach (var corner in corners)
+                            {
+                                centerX += corner.X;
+                                centerY += corner.Y;
+                            }
+                            centerX /= corners.Length;
+                            centerY /= corners.Length;
+
+                            // Calculation of coefficient (mm/pixel) for X and Y
+                            double pixelDistanceX = corners[1].X - corners[0].X; // distance in pixels on X
+                            double pixelDistanceY = corners[patternSize.Width].Y - corners[0].Y; // distance in pixels on Y
+
+                            double mmPerPixelX = REAL_DISTANCE_MM / pixelDistanceX; // Coefficient for X
+                            double mmPerPixelY = REAL_DISTANCE_MM / pixelDistanceY; // Coefficient for Y
+
+                            // Print results
+                            Console.WriteLine($"Image: {queryImagePath}");
+                            Console.WriteLine($"Center: X={centerX:F2} pixels, Y={centerY:F2} pixels");
+                            Console.WriteLine($"Conversion factors: X={mmPerPixelX:F4} mm/pixel, Y={mmPerPixelY:F4} mm/pixel");
+
+
+                            Cv2.DrawChessboardCorners(queryImage, patternSize, corners, found);
+                            Cv2.ImShow("Chessboard Corners", queryImage);
+                            Cv2.WaitKey(0);
+                            break;
+                        }
+                    }
+                    if (found)
+                    {
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    Console.WriteLine($"Chessboard not found in image: {queryImagePath}");
+                }
+
+            
+                Cv2.DestroyAllWindows();
             }
-
-            // Draw corners vor visualization
-            Cv2.DrawChessboardCorners(queryImage, patternSize, corners, found);
-            Cv2.ImShow("Chessboard Corners", queryImage);
-            Cv2.WaitKey(0);
-
-            // Center calculation (X, Y)
-            double centerX = 0, centerY = 0;
-            foreach (var corner in corners)
-            {
-                centerX += corner.X;
-                centerY += corner.Y;
-            }
-            centerX /= corners.Length;
-            centerY /= corners.Length;
-
-            // Calculation of coefficient (mm/pixel) for X and Y
-            double pixelDistanceX = corners[1].X - corners[0].X; // distance in pixels on X
-            double pixelDistanceY = corners[patternSize.Width].Y - corners[0].Y; // distance in pixels on Y
-
-            double mmPerPixelX = REAL_DISTANCE_MM / pixelDistanceX; // Coefficient for X
-            double mmPerPixelY = REAL_DISTANCE_MM / pixelDistanceY; // Coefficient for Y
-
-            // Print results
-            Console.WriteLine($"Center: X={centerX:F2} pixels, Y={centerY:F2} pixels");
-            Console.WriteLine($"Conversion factors: X={mmPerPixelX:F4} mm/pixel, Y={mmPerPixelY:F4} mm/pixel");
-
-            Cv2.DestroyAllWindows();
         }
-
-
-
 
 
     }
