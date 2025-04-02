@@ -309,7 +309,6 @@ namespace OpenCV
                             Cv2.DrawChessboardCorners(queryImage, patternSize, corners, found);
                             Cv2.ImShow("Chessboard Corners", queryImage);
                             Cv2.WaitKey(0);
-                            break;
                         }
                     }
                     if (found)
