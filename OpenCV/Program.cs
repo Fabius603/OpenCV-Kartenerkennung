@@ -275,7 +275,7 @@ namespace OpenCV
                     for (int height = 3; height <= 7; height++)
                     {
                         patternSize = new Size(width, height);
-
+                        Console.WriteLine("width: " + width + "height: " + height);
                         found = Cv2.FindChessboardCorners(queryImage, patternSize, out corners);
                         if (found)
                         {
